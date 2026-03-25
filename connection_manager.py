@@ -12,11 +12,11 @@ class ConnectionManager:
     def disconnect(self, websocket: WebSocket, user_id: str):
         del self.active_connections[user_id]
 
-    async def send_personal_message(self, message: Message):
+    async def send_personal_message(self, message: Message, user_email: str):
         inner = self.active_connections.get(message.to)
         if inner:
             to_websocket = inner["websocket"]
-            await to_websocket.send_text(message.message) # TODO send_json with structured data {"type": "message", "from": sender_id, "message": "..."}
+            await to_websocket.send_json({"type":"message", "from":user_email, "message":message.message })
 
     async def broadcast(self, message: dict):
         for inner in self.active_connections.values():

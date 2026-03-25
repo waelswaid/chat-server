@@ -27,7 +27,7 @@ async def route_to_server(websocket: WebSocket):
         while True:
             data = await websocket.receive_json()
             message = Message(**data)
-            await manager.send_personal_message(message)
+            await manager.send_personal_message(message, user_email)
 
     except WebSocketDisconnect:
         manager.disconnect(websocket, user_id)
