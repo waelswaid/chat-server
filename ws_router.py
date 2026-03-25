@@ -19,7 +19,7 @@ async def route_to_server(websocket: WebSocket):
         return
     await manager.connect(websocket, user_id, user_email)
     await websocket.send_json({
-        "type": "users_list",
+        "type": "user_list",
         "users": manager.get_online_users()
     })
     await manager.broadcast({"type": "user_joined", "user_id": user_id, "email": user_email})
