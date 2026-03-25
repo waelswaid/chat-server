@@ -22,5 +22,11 @@ class ConnectionManager:
         for inner in self.active_connections.values():
             await inner["websocket"].send_json(message)
 
+    def get_online_users(self) -> list[dict]:
+        return [
+            {"user_id": uid, "email": info["email"]}
+            for uid, info in self.active_connections.items()
+        ]
+
     
 manager = ConnectionManager()
