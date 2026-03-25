@@ -3,24 +3,24 @@ from schemas.message import Message
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: dict[int, WebSocket] = {}
+        self.active_connections: dict[str, dict] = {}
 
-    async def connect(self, websocket: WebSocket, client_id:int):
+    async def connect(self, websocket: WebSocket, user_id: str, user_email : str):
         await websocket.accept()
-        self.active_connections.update({client_id : websocket})
+        self.active_connections.update({user_id : {"websocket" : websocket, "email" : user_email}})
 
-    def disconnect(self, websocket: WebSocket, client_id: int):
-        del self.active_connections[client_id]
+    def disconnect(self, websocket: WebSocket, user_id: str):
+        del self.active_connections[user_id]
 
     async def send_personal_message(self, message: Message):
-        to_websocket = self.active_connections.get(message.to)
-        if to_websocket:
-            await to_websocket.send_text(message.message)
+        inner = self.active_connections.get(message.to)
+        if inner:
+            to_websocket = inner["websocket"]
+            await to_websocket.send_text(message.message) # TODO send_json with structured data {"type": "message", "from": sender_id, "message": "..."}
 
-    async def broadcast(self, message: str):
-        ws_values = self.active_connections.values()
-        for connection in ws_values:
-            await connection.send_text(message)
+    async def broadcast(self, message: dict):
+        for inner in self.active_connections.values():
+            await inner["websocket"].send_json(message)
 
     
 manager = ConnectionManager()

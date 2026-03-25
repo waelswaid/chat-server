@@ -1,15 +1,24 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from connection_manager import manager
 from schemas.message import Message
+from core.auth_token import validate_token
 
 websocket_router = APIRouter()
 
 
 
-@websocket_router.websocket("/ws/{client_id}")
-async def route_to_server(websocket: WebSocket, client_id: int):
-    await manager.connect(websocket, client_id)
-    await manager.broadcast(f"user {client_id} has joined the chat.")
+@websocket_router.websocket("/ws/")
+async def route_to_server(websocket: WebSocket):
+    token = websocket.query_params.get("token")
+    if not token:
+        return
+    try:
+        user_id, user_email = validate_token(token)
+    except Exception:
+        await websocket.close(code=1008)
+        return
+    await manager.connect(websocket, user_id, user_email)
+    await manager.broadcast({"type": "user_joined", "user_id": user_id, "email": user_email})
     try:
         while True:
             data = await websocket.receive_json()
@@ -17,5 +26,5 @@ async def route_to_server(websocket: WebSocket, client_id: int):
             await manager.send_personal_message(message)
 
     except WebSocketDisconnect:
-        manager.disconnect(websocket, client_id)
-        await manager.broadcast(f"user {client_id} has left the chat.")
+        manager.disconnect(websocket, user_id)
+        await manager.broadcast({"type": "user_left", "user_id": user_id, "email": user_email})
