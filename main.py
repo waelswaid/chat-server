@@ -1,8 +1,19 @@
 from fastapi import FastAPI
 from chat_websocket import websocket_router
+from contextlib import asynccontextmanager
+from database import engine
 
 
-app = FastAPI()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    await engine.dispose()
+
+
+app = FastAPI(lifespan = lifespan)
+
 
 
 @app.get("/health")

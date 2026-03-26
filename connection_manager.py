@@ -4,7 +4,7 @@ from schemas.message import Message
 class ConnectionManager:
     # active connections pool
     def __init__(self):
-        self.active_connections: dict[str, dict] = {}
+        self.active_connections: dict[str, dict] = {}        
 
     async def connect(self, websocket: WebSocket, user_id: str, user_email : str):
         await websocket.accept()
