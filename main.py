@@ -1,6 +1,5 @@
 from fastapi import FastAPI
-from ws_router import websocket_router
-
+from chat_websocket import websocket_router
 
 
 app = FastAPI()

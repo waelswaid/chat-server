@@ -2,6 +2,7 @@ from fastapi import WebSocket
 from schemas.message import Message
 
 class ConnectionManager:
+    # active connections pool
     def __init__(self):
         self.active_connections: dict[str, dict] = {}
 
@@ -13,9 +14,10 @@ class ConnectionManager:
         del self.active_connections[user_id]
 
     async def send_personal_message(self, message: Message, user_email: str):
-        inner = self.active_connections.get(message.to)
+        # active_connections --> {user_id : {"websocket":websocket, "email" : user_email}}
+        inner = self.active_connections.get(message.to) # inner = {"websocket":websocket, "email":user_email}
         if inner:
-            to_websocket = inner["websocket"]
+            to_websocket = inner["websocket"] # to_websocket = websocket
             await to_websocket.send_json({"type":"message", "from":user_email, "message":message.message })
 
     async def broadcast(self, message: dict):
@@ -24,9 +26,10 @@ class ConnectionManager:
 
     def get_online_users(self) -> list[dict]:
         return [
-            {"user_id": uid, "email": info["email"]}
-            for uid, info in self.active_connections.items()
+            {"user_id": uid, "email": inner["email"]}
+            for uid, inner in self.active_connections.items()
+            # .items()-> list[tuples] = [(uid:{"websocket":websocket,"email":email}),(),...] 
         ]
-
+                            
     
 manager = ConnectionManager()
