@@ -4,6 +4,7 @@ class Settings(BaseSettings):
     JWT_PUBLIC_KEY : str = ""
     DATABASE_URL : str = ""
     REDIS_URL : str = ""
+    CHAT_DATABASE_URL : str = ""
 
 
 
