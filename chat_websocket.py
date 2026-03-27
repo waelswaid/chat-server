@@ -16,6 +16,7 @@ async def route_to_server(websocket: WebSocket):
     # extract token
     token = websocket.query_params.get("token")
     if not token:
+        await websocket.close(code=1008)
         return
     try:
         # calidate and extract user_id, user_email
@@ -50,7 +51,7 @@ async def route_to_server(websocket: WebSocket):
                 message = Message(**data)
                 await manager.send_personal_message(message, user_email)
             else:
-                await request_handler(msg_type,data,websocket,user_id)
+                await request_handler(msg_type,data,websocket,user_id,user_email)
 
 
     except WebSocketDisconnect:

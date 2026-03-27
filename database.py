@@ -21,7 +21,7 @@ engine = create_async_engine(settings.CHAT_DATABASE_URL.replace("postgresql://",
   The async with ensures the session is properly closed when you're done.
 """
 
-async_session = async_sessionmaker(engine)
+async_session = async_sessionmaker(engine, expire_on_commit=False)
 
 
 # in any REST route you can use db: AsyncSession = Depends(get_db). For WebSocket handlers you'll call async_session()
