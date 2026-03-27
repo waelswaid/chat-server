@@ -3,7 +3,8 @@ from fastapi import WebSocket
 from database import async_session
 from repository.friend_system_repo import (
     send_friend_req_to_db, friend_request_accept_to_db,
-    friend_req_decline_to_db, friend_remove_from_db
+    friend_req_decline_to_db, friend_remove_from_db,
+    get_friend_list_from_db, get_pending_list_from_db
 ) 
 from sqlalchemy.exc import IntegrityError
 from connection_manager import manager
@@ -63,11 +64,15 @@ async def friend_remove(req: FriendRemove, websocket : WebSocket, remover_id: st
         return
         
 
-async def return_friend_list(websocket:WebSocket):
-    pass
+async def return_friend_list(websocket: WebSocket, user_id: str):
+    async with async_session() as session:
+        friends = await get_friend_list_from_db(session, user_id)
+    await websocket.send_json({"type": "friend_list", "friends": friends})
 
-async def return_pending_list(websocket:WebSocket):
-    pass
+async def return_pending_list(websocket: WebSocket, user_id: str):
+    async with async_session() as session:
+        pending = await get_pending_list_from_db(session, user_id)
+    await websocket.send_json({"type": "pending_list", "sent": pending["sent"], "received": pending["received"]})
 
 
 
@@ -83,9 +88,10 @@ async def request_handler(msg_type:str, data:dict, websocket:WebSocket, user_id:
         await friend_request_declined(req,websocket,user_id)
     elif msg_type == "friend_remove":
         req = FriendRemove(**data)
+        await friend_remove(req, websocket, user_id)
     elif msg_type == "friend_list":
-        await return_friend_list(websocket)
+        await return_friend_list(websocket, user_id)
     elif msg_type == "pending_list":
-        await return_pending_list(websocket)
+        await return_pending_list(websocket, user_id)
     else:
         await websocket.send_json({"type": "error", "message": "unknown type"})

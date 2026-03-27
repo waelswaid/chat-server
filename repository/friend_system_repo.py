@@ -4,7 +4,7 @@ from schemas.friend_request import FriendRequest, FriendAccept,FriendDecline, Fr
 from database import async_session
 from datetime import datetime, timezone
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import delete, or_, and_
+from sqlalchemy import delete, or_, and_, select
 
 async def send_friend_req_to_db(session, to:str, user_id: str) -> None:
     request = PendingRequests(
@@ -60,3 +60,23 @@ async def friend_remove_from_db(session, removed_id: str, remover_id:str) -> Non
         raise ValueError("not friends")
     await session.commit()
     return
+
+
+async def get_friend_list_from_db(session, user_id: str) -> list[dict]:
+    result = await session.execute(
+        select(Friendships.friend_id).where(Friendships.user_id == user_id)
+    )
+    return [{"user_id": row.friend_id} for row in result.all()]
+
+
+async def get_pending_list_from_db(session, user_id: str) -> dict:
+    sent = await session.execute(
+        select(PendingRequests.receiver_id).where(PendingRequests.sender_id == user_id)
+    )
+    received = await session.execute(
+        select(PendingRequests.sender_id).where(PendingRequests.receiver_id == user_id)
+    )
+    return {
+        "sent": [{"user_id": row.receiver_id} for row in sent.all()],
+        "received": [{"user_id": row.sender_id} for row in received.all()]
+    }

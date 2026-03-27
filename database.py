@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 
 
 # This is your connection pool. One instance, shared across the app. It reads the DB URL from your config
-engine = create_async_engine(settings.CHAT_DATABASE_URL)
+engine = create_async_engine(settings.CHAT_DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://"))
 
 """
   A session is a short-lived object that you use to run queries — think of it as a conversation with the database. You open one, do your 

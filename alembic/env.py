@@ -21,10 +21,7 @@ if config.config_file_name is not None:
 
 # set the database URL from app config
 from core.config import settings
-config.set_main_option(
-    "sqlalchemy.url",
-    settings.CHAT_DATABASE_URL.replace("postgresql+asyncpg", "postgresql")
-)
+config.set_main_option("sqlalchemy.url", settings.CHAT_DATABASE_URL)
 
 # import all models so Base.metadata knows about them
 from models.base import Base

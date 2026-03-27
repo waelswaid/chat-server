@@ -3,6 +3,8 @@ from connection_manager import manager
 from schemas.message import Message
 from core.auth_token import validate_token
 from services.friend_service import request_handler
+from services.user_db_service import upsert_user
+from database import async_session
 
 websocket_router = APIRouter()
 
@@ -22,6 +24,10 @@ async def route_to_server(websocket: WebSocket):
         await websocket.close(code=1008)
         return
     
+
+    # upsert user to database
+    async with async_session() as session:
+        await upsert_user(session, user_id, user_email)
 
     # connect user
     await manager.connect(websocket, user_id, user_email)
