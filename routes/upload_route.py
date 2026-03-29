@@ -13,3 +13,19 @@ file upload flow:
 @upload_router.post("/upload/")
 async def upload_route(sender_id:str, to_id:str, file: UploadFile = File(...)):
     await upload_file(sender_id, to_id, file)
+
+
+"""
+next steps:
+create a database relation for messages
+create S3 and CDN url for files
+
+how will messages be stored?
+
+__tablename__ = messages
+sender_id(string), 
+receiver_id(string), 
+type(string),  # 'text', 'image', 'video', 'file'...
+content(text),
+sent_at(datetime)
+"""

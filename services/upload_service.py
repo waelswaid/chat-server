@@ -1,6 +1,7 @@
 from fastapi import UploadFile, File, HTTPException, Form
 import uuid, shutil
 from core.config import settings
+import aiofiles
 
 
 MAX_SIZE = 10 * 1024 * 1024 # 10mb
@@ -19,7 +20,8 @@ async def upload_file(
     contents = await file.read()
     if len(contents) > MAX_SIZE:
         raise HTTPException(status_code=400, detail="file too big")
-    
+
+
     if not file.filename:
         raise HTTPException(status_code=400, detail="missing file name, can't extract extension")
 
@@ -32,8 +34,8 @@ async def upload_file(
     filename = f"{uuid.uuid4()}.{ext}"
 
 
-    with open(f"uploads/{filename}", "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    async with aiofiles.open(f"uploads/{filename}", "wb") as buffer:
+        await buffer.write(contents)
 
     return {
         "sender_id": sender_id,
