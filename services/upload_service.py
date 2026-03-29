@@ -37,6 +37,7 @@ async def upload_file(sender_id: str, file: UploadFile):
         await buffer.write(contents)
 
     return {
+        "type": "file_upload",
         "sender_id": sender_id,
         "url": f"uploads/{filename}"
     }
