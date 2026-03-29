@@ -1,43 +1,40 @@
-from fastapi import UploadFile, File, HTTPException
+from fastapi import UploadFile, HTTPException
 import uuid
-import aiofiles
-from pathlib import Path
+import boto3
+from core.config import settings
 
-UPLOAD_DIR = Path("uploads")                                                                                                           
-UPLOAD_DIR.mkdir(exist_ok=True)
-
-
-MAX_SIZE = 10 * 1024 * 1024 # 10mb
+MAX_SIZE = 10 * 1024 * 1024  # 10mb
 ALLOWED_TYPES = {"image/jpeg", "image/png", "image/gif", "video/mp4"}
 
+s3 = boto3.client("s3", region_name=settings.AWS_REGION)
+
+
 async def upload_file(sender_id: str, file: UploadFile):
-    
+
     if file.content_type not in ALLOWED_TYPES:
         raise HTTPException(status_code=400, detail="invalid file type")
-    
-    # validate file size
+
     contents = await file.read()
     if len(contents) > MAX_SIZE:
         raise HTTPException(status_code=400, detail="file too big")
 
-
     if not file.filename:
         raise HTTPException(status_code=400, detail="missing file name, can't extract extension")
 
-    """
-    extracts file extension:
-    "photo.png".split(".") --> ["photo", "png"] --> [-1] --> "png"
-    """
     ext = file.filename.split(".")[-1]
-    # generate new unique filename to prevent overwrite, and malicious filenames injection
     filename = f"{uuid.uuid4()}.{ext}"
 
+    s3.put_object(
+        Bucket=settings.S3_BUCKET_NAME,
+        Key=filename,
+        Body=contents,
+        ContentType=file.content_type,
+    )
 
-    async with aiofiles.open(f"uploads/{filename}", "wb") as buffer:
-        await buffer.write(contents)
+    cdn_url = f"https://{settings.CDN_DOMAIN}/{filename}"
 
     return {
         "type": "file_upload",
         "sender_id": sender_id,
-        "url": f"uploads/{filename}"
+        "url": cdn_url,
     }

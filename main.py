@@ -3,8 +3,6 @@ from routes.chat_websocket import websocket_router
 from routes.upload_route import upload_router
 from contextlib import asynccontextmanager
 from database import engine
-from fastapi.staticfiles import StaticFiles                                                                                            
-                                                                                                                                         
 
 
 
@@ -16,7 +14,6 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan = lifespan)
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 
 
