@@ -1,17 +1,16 @@
-from fastapi import UploadFile, File, HTTPException, Form
-import uuid, shutil
-from core.config import settings
+from fastapi import UploadFile, File, HTTPException
+import uuid
 import aiofiles
+from pathlib import Path
+
+UPLOAD_DIR = Path("uploads")                                                                                                           
+UPLOAD_DIR.mkdir(exist_ok=True)
 
 
 MAX_SIZE = 10 * 1024 * 1024 # 10mb
 ALLOWED_TYPES = {"image/jpeg", "image/png", "image/gif", "video/mp4"}
 
-async def upload_file(
-        sender_id: str,
-        to_id: str,
-        file: UploadFile = File(...)
-):
+async def upload_file(sender_id: str, file: UploadFile):
     
     if file.content_type not in ALLOWED_TYPES:
         raise HTTPException(status_code=400, detail="invalid file type")
@@ -39,6 +38,5 @@ async def upload_file(
 
     return {
         "sender_id": sender_id,
-        "to_id":to_id,
         "url": f"uploads/{filename}"
     }

@@ -1,18 +1,18 @@
-from fastapi import UploadFile, File, APIRouter
+from fastapi import UploadFile, File, APIRouter, Depends
 from services.upload_service import upload_file
+from core.auth_token import validate_token
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials 
+
+security = HTTPBearer() # handles http header parsing
 upload_router = APIRouter()
 
-"""
-file upload flow:
-1. User selects a file
-2. Client POSTs file to HTTP endpoint → gets back a URL
-3. Client sends that URL over WebSocket as a chat message
-4. Other clients receive the URL and render the file
-"""
+
 
 @upload_router.post("/upload/")
-async def upload_route(sender_id:str, to_id:str, file: UploadFile = File(...)):
-    await upload_file(sender_id, to_id, file)
+async def upload_route(credentials: HTTPAuthorizationCredentials = Depends(security), file: UploadFile = File(...)):
+    sender_id, sender_email = validate_token(credentials.credentials)
+    return await upload_file(sender_id, file)
+
 
 
 """

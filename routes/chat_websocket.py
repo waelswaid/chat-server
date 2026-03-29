@@ -45,8 +45,6 @@ async def route_to_server(websocket: WebSocket):
             # listen for incoming requests
             data = await websocket.receive_json()
             msg_type = data.get("type")
-
-
             if msg_type == "message":
                 message = Message(**data)
                 await manager.send_personal_message(message, user_email)
