@@ -19,7 +19,7 @@ async def route_to_server(websocket: WebSocket):
         await websocket.close(code=1008)
         return
     try:
-        # calidate and extract user_id, user_email
+        # validate and extract user_id, user_email
         user_id, user_email = validate_token(token)
     except Exception:
         await websocket.close(code=1008)

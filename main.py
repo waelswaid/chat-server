@@ -1,5 +1,6 @@
 from fastapi import FastAPI
-from chat_websocket import websocket_router
+from routes.chat_websocket import websocket_router
+from routes.upload_route import upload_router
 from contextlib import asynccontextmanager
 from database import engine
 
@@ -22,6 +23,6 @@ async def health():
 
 
 app.include_router(websocket_router, prefix="/server")
-
+app.include_router(upload_router, prefix="/server")
 
 

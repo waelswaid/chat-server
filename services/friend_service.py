@@ -103,7 +103,7 @@ async def return_pending_list(websocket: WebSocket, user_id: str):
 
 
 
-
+# a user connected at chat_websocket.py, user_id, user_email, and websocket were passed here
 async def request_handler(msg_type:str, data:dict, websocket:WebSocket, user_id:str, user_email:str):
     try:
         if msg_type == "friend_request":
