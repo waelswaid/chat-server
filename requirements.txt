@@ -12,3 +12,4 @@ psycopg2-binary
 aiofiles
 python-multipart
 boto3
+redis
