@@ -6,19 +6,19 @@ Runs as a Docker container on AWS alongside portfolio/ and auth-system/
 ## Features
 
 ### Core
-- Authentication via auth-system
-- Friends system (add by email, requires confirmation)
-- 1-on-1 chats with users on friends list
-- Group chats (create, add/remove members)
-- Chat history (persisted)
+- [X] Authentication via auth-system 
+- [X] Friends system (add by email, requires confirmation)
+- [X] 1-on-1 chats with users on friends list
+- [] Group chats (create, add/remove members)
+- [] Chat history (persisted)
 
 ### Real-time
-- Online/offline presence
-- Typing indicator
-- Delivered vs seen (read receipts)
+- [X] Online/offline presence
+- [] Typing indicator
+- [] Delivered vs seen (read receipts)
 
 ### Media & Search
-- File/image sharing
+- [X]File/image sharing
 - Message search
 
 ## Tech Stack
@@ -36,4 +36,26 @@ Runs as a Docker container on AWS alongside portfolio/ and auth-system/
 
 
 ### redis
-    upload endpoint limited to 10/0.5hr per user
+    - upload endpoint limited to 10/0.5hr per user
+    - voice messages uploads limited to 8mb/30mins per user
+
+### chats and messaging history
+ - tables:
+   - messages: message_id (bigint, sequential), chat_id(uuid), user_id(str), msg(str), type(str), timestamp(datetime)
+                Primary_Key(message_id)
+                Foreign_Key(chat_id) references chats.chat_id
+                Foreign_Key(user_id) references users.user_id
+                index(chat_id, message_id)
+
+   - chats_members: chat_id(uuid), user_id(str), is_admin(boolean), joined_at(datetime)
+            Primary_Key(chat_id, user_id)
+            Foreign_Key(chat_id) references chats.chat_id
+            Foreign_key(user_id) references users.user_id
+    
+    - chats: chat_id (PK), chat_name(str, nullable), created_at(datetime), is_group(boolean), dm_key(str,unique,nullable)
+
+* dm_key: prevents direct chat duplication, when creating DM sort user ids and concatenate them "id1:id2", for group chats it's NULL
+
+- notes to self:
+    query chats by index(chat_id, message_id) for loading chat history
+    query chats by dm_key for direct chats
