@@ -9,16 +9,15 @@ Runs as a Docker container on AWS alongside portfolio/ and auth-system/
 - [X] Authentication via auth-system 
 - [X] Friends system (add by email, requires confirmation)
 - [X] 1-on-1 chats with users on friends list
-- [] Group chats (create, add/remove members)
-- [] Chat history (persisted)
+- [ ] Group chats (create, add/remove members)
+- [ ] Chat history (persisted)
 
 ### Real-time
 - [X] Online/offline presence
-- [] Typing indicator
-- [] Delivered vs seen (read receipts)
+- [ ] Typing indicator
 
 ### Media & Search
-- [X]File/image sharing
+- [X] File/image sharing
 - Message search
 
 ## Tech Stack
