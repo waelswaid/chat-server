@@ -15,13 +15,15 @@ redis_client = redis.from_url(settings.REDIS_URL)
 @upload_router.post("/upload/")
 async def upload_route(credentials: HTTPAuthorizationCredentials = Depends(security), file: UploadFile = File(...)):
     sender_id, sender_email = validate_token(credentials.credentials)
-    redis_key = f"rate:{sender_email}"
-    # incr returns value=1 on non-existent key
-    count = await redis_client.incr(redis_key)
-    if count == 1:# new key-> set ttl with .expire()
-        await redis_client.expire(redis_key, settings.UPLOAD_LIMIT_TTL)
-    if count > settings.UPLOAD_RATE_LIMIT:
-            raise HTTPException(status_code=429, detail="too many attempts, try again later")
+    is_audio = file.content_type and file.content_type.startswith("audio/")
+    if not is_audio:
+        redis_key = f"rate:{sender_email}"
+        # incr returns value=1 on non-existent key
+        count = await redis_client.incr(redis_key)
+        if count == 1:# new key-> set ttl with .expire()
+            await redis_client.expire(redis_key, settings.UPLOAD_LIMIT_TTL)
+        if count > settings.UPLOAD_RATE_LIMIT:
+                raise HTTPException(status_code=429, detail="too many attempts, try again later")
     return await upload_file(sender_id, file)
 
 
