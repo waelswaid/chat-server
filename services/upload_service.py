@@ -11,14 +11,13 @@ ALLOWED_TYPES = {"image/jpeg", "image/png", "image/gif", "video/mp4", "applicati
 s3 = boto3.client("s3", region_name=settings.AWS_REGION)
 
 
-async def upload_file(sender_id: str, file: UploadFile):
+async def upload_file(sender_id: str, file: UploadFile, contents: bytes):
 
-    # content_type can include codec info (e.g. "audio/webm;codecs=opus"), check base type
+    # content_type can include codec info ("audio/webm;codecs=opus"), check base type
     base_type = file.content_type.split(";")[0].strip() if file.content_type else ""
     if base_type not in ALLOWED_TYPES:
         raise HTTPException(status_code=400, detail="invalid file type")
-
-    contents = await file.read()
+    
     if len(contents) > MAX_SIZE:
         raise HTTPException(status_code=400, detail="file too big")
 
