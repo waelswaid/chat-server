@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     REDIS_URL: str = ""
     UPLOAD_LIMIT_TTL: int = 60 * 30 #30 mins
     UPLOAD_RATE_LIMIT: int = 10
-    SIZE_RATE_LIMIT:int = 15 * 1024 * 1024 #15mb
+    SIZE_RATE_LIMIT:int = 8 * 1024 * 1024 #15mb
 
 
 settings = Settings()

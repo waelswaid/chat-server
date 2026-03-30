@@ -6,7 +6,7 @@ from core.config import settings
 MAX_SIZE = 10 * 1024 * 1024  # 10mb
 # MIME types (Multipurpose Internet Mail Extensions) a standard format for identifying file types over HTTP
 ALLOWED_TYPES = {"image/jpeg", "image/png", "image/gif", "video/mp4", "application/pdf", 
-                 "audio/webm", "audio/mp4"}
+                 "audio/webm", "audio/mp4", "audio/mpeg"}
 
 s3 = boto3.client("s3", region_name=settings.AWS_REGION)
 
