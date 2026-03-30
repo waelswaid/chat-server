@@ -29,7 +29,12 @@ Runs as a Docker container on AWS alongside portfolio/ and auth-system/
 - **Deployment:** Docker, Nginx (reverse proxy from portfolio)
 
 
-## file upload flow
+### file upload flow
     post /server/upload/ with bearer token + file -> returns {"type": "file_upload", "sender_id": "...", "url": "uploads/..."}
     WebSocket send {"type": "file_upload", "to": "user_id", "url": "uploads/..."} via chat_websocket (send_personal_message)
     GET /uploads/<filename> → serves the file via StaticFiles (GET endpoint as at main: app.mount("/uploads"...) )
+
+
+### next step: rate limit upload endpoint with redis
+    request arrives -> if not key in redis keys -> r.set(key, value, ex=ttl)
+    request arrives -> r = INCR key (email+ip) -> if r>limit: raise exc
