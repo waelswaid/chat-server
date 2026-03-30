@@ -35,6 +35,5 @@ Runs as a Docker container on AWS alongside portfolio/ and auth-system/
     GET /uploads/<filename> → serves the file via StaticFiles (GET endpoint as at main: app.mount("/uploads"...) )
 
 
-### next step: rate limit upload endpoint with redis
-    request arrives -> if not key in redis keys -> r.set(key, value, ex=ttl)
-    request arrives -> r = INCR key (email+ip) -> if r>limit: raise exc
+### redis
+    upload endpoint limited to 10/0.5hr per user
