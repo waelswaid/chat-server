@@ -13,7 +13,9 @@ s3 = boto3.client("s3", region_name=settings.AWS_REGION)
 
 async def upload_file(sender_id: str, file: UploadFile):
 
-    if file.content_type not in ALLOWED_TYPES:
+    # content_type can include codec info (e.g. "audio/webm;codecs=opus"), check base type
+    base_type = file.content_type.split(";")[0].strip() if file.content_type else ""
+    if base_type not in ALLOWED_TYPES:
         raise HTTPException(status_code=400, detail="invalid file type")
 
     contents = await file.read()
@@ -30,7 +32,7 @@ async def upload_file(sender_id: str, file: UploadFile):
         Bucket=settings.S3_BUCKET_NAME,
         Key=filename,
         Body=contents,
-        ContentType=file.content_type,
+        ContentType=base_type,
     )
 
     cdn_url = f"https://{settings.CDN_DOMAIN}/{filename}"
