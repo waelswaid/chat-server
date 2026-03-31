@@ -6,7 +6,7 @@ from core.auth_token import validate_token
 from services.friend_service import friend_request_handler
 from services.user_db_service import upsert_user
 from database import async_session
-from services.chat_service import chat_handler, load_chat
+from services.chat_service import chat_handler, load_chat, chat_list
 from sqlalchemy.exc import SQLAlchemyError
 
 websocket_router = APIRouter()
@@ -40,6 +40,9 @@ async def request_filter(data, msg_type:str, user_id:str, user_email, websocket:
         dm_key = load_history.dm_key
         before_message_id = load_history.before
         await websocket.send_json(await load_chat(dm_key, before_message_id, user_id))
+
+    elif msg_type == "chat_list":
+        await websocket.send_json(await chat_list(user_id))
 
     else:
         await friend_request_handler(msg_type,data,websocket,user_id,user_email)

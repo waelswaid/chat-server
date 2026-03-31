@@ -4,7 +4,7 @@ from database import async_session
 logger = logging.getLogger(__name__)
 from repository.chat_repo import (
     query_chats_for_existing_chat, insert_message, insert_new_chat, insert_users_to_chat_members,
-    load_messages, is_chat_member)
+    load_messages, is_chat_member, get_user_chats)
 from models.chats import Chat
 from models.chat_members import ChatMember
 from models.messages import Message
@@ -53,3 +53,9 @@ async def load_chat(dm_key: str, before_message_id:int|None, user_id:str):
         return {"type": "load_history", "dm_key": dm_key, "messages": [
             {"message_id": m.message_id, "user_id": m.user_id, "message": m.message, "type": m.type, "timestamp": str(m.timestamp)}
             for m in reversed(messages)]}
+
+
+async def chat_list(user_id: str):
+    async with async_session() as session:
+        chats = await get_user_chats(session, user_id)
+        return {"type": "chat_list", "chats": chats}
