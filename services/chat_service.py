@@ -28,6 +28,7 @@ async def chat_handler(msg_type:str, message:str,  sender_id:str, receiver_id:st
                 member1 = ChatMember(chat_id = chat_id, user_id = sender_id, is_admin=False)
                 member2 = ChatMember(chat_id = chat_id, user_id = receiver_id, is_admin=False)
                 await insert_new_chat(session, chat)
+                await session.flush()
                 await insert_users_to_chat_members(session, member1, member2)
 
             message_orm = Message(chat_id=chat_id, user_id = sender_id, message = message, type=msg_type)
