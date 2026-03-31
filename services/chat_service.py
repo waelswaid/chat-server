@@ -1,7 +1,7 @@
-from fastapi import WebSocket
 from database import async_session
-from connection_manager import manager
-from repository.chat_repo import query_chats_for_existing_chat, insert_message, insert_new_chat, insert_users_to_chat_members
+from repository.chat_repo import (
+    query_chats_for_existing_chat, insert_message, insert_new_chat, insert_users_to_chat_members,
+    load_messages, is_chat_member)
 from models.chats import Chat
 from models.chat_members import ChatMember
 from models.messages import Message
@@ -30,9 +30,20 @@ async def chat_handler(msg_type:str, message:str,  sender_id:str, receiver_id:st
             message_orm = Message(chat_id=chat_id, user_id = sender_id, message = message, type=msg_type)
             await insert_message(session, message_orm)
             await session.commit()
-            await manager.send_personal_message(msg_type,receiver_id, message, sender_id)
         except SQLAlchemyError:
             await session.rollback()
-            sender_conn = manager.get_connection(sender_id)
-            if sender_conn:
-                await sender_conn["websocket"].send_json({"type": "message_error", "message": "failed to send"})
+            raise
+
+
+
+async def load_chat(chat_id: str, before_message_id:int|None, user_id:str):
+    async with async_session() as session:
+        result = await is_chat_member(session, chat_id, user_id)
+        if not result:
+            return {"type": "message_error", "message": "unauthorized chat"}
+        messages =  await load_messages(session, chat_id, before_message_id)   
+            
+        # load_messages() returns a list of Message ORM instances, I need to convert to dicts/json b4 returning to the websocket
+        return {"type": "load_history", "messages": [
+            {"message_id": m.message_id, "user_id": m.user_id, "message": m.message, "type": m.type, "timestamp": str(m.timestamp)}
+            for m in reversed(messages)]}

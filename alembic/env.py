@@ -28,6 +28,9 @@ from models.base import Base
 from models.users import User
 from models.pending_requests import PendingRequests
 from models.friendships import Friendships
+from models.chats import Chat
+from models.chat_members import ChatMember
+from models.messages import Message
 
 target_metadata = Base.metadata
 

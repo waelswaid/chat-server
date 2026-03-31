@@ -1,0 +1,83 @@
+
+
+
+"""
+the writing path of 1-on-1 chats is ready, now I need to work on the reading path (message persistence), first I need to handle requests
+how do reading requests from the user look like?
+probably something like: {"type": "load_history", "chat_id":"..."}
+hold on that request is good for the first load but if he scrolls up? I would need to load a different set of messages. got it the request should be:
+{"type":"load_history", "chat_id":chat_id, "message_id":message_id}
+
+actually I should be able to handle both of these requests:
+
+{"type": "load_history", "chat_id":chat_id}
+{"type":"load_history", "chat_id":chat_id, "message_id":message_id}
+
+for that I'll need a pydantic model with optional message_id field, yeah that should cover it:
+
+class LoadHistory(BaseModel):
+    chat_id: uuid.UUID
+    message_id: int | None = None
+
+that should be fine, message_id is optional and set to None by default.
+what's the next step?
+
+client sends request --> arrives at core loop --> forwarded to request filter
+
+next step is catching it in request_filter.
+
+added this in request_filter:
+
+    elif msg_type == "load_history":
+        load_history = LoadHistory(**data)
+        chat_id = load_history.chat_id
+        load_msgs_before_msg_id = load_history.before
+        if load_msgs_before_msg_id:
+        
+            #this is not the first load, I need to call a service layer function that takes in chat_id and message_id
+            #and fetches 10 messages that came before message_id
+        else:
+            
+            #this is the first load I need to call a service layer function that takes in chat_id and fetches
+            #last 10 messages 
+            
+        pass
+        
+now I need to write a service layer function that basically calls a repository layer function, on it.
+I need to construct Message ORM in service layer and pass it to repository layer, the problem is I need a message_id to construct 
+the ORM, and if it's the first load I don't have a message_id, what can I do?
+I can write a repo function that fetches most recent message_id in chat_id and return it to service layer.
+na I don't need to construct an ORM I'm reading not writing I just need to pass relevant data for the query, I wrote this in service layer:
+
+async def load_chat(chat_id: str, before_message_id:int|None, user_id:str):
+    async with async_session() as session:
+        if before_message_id is None:
+            message_id = int(await most_recent_message(session, chat_id))
+            return await load_messages(session, chat_id, user_id, message_id)
+        
+        return await load_messages(session, chat_id, user_id, before_message_id)
+
+and this in repo:
+
+async def most_recent_message(session, chat_id:str):
+    result = (await session.execute(
+        select(Message.message_id)
+        .where(Message.chat_id == chat_id)
+        .order_by(Message.message_id.desc())
+        .limit(1)
+    )).scalars().first()
+    return result
+
+async def load_messages(session, chat_id:str, user_id:str, before_message_id:int):
+    pass
+
+all I need to do is write the load_messages() to return last 10 messages
+
+async def load_messages(session, chat_id:str, user_id:str, before_message_id:int):
+    result = (await session.execute(select(Message).where(
+        Message.chat_id == chat_id,
+        Message.message_id <= before_message_id
+    ).order_by(Message.message_id.desc()).limit(10))).scalars().all()
+    return result
+
+"""

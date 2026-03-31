@@ -1,27 +1,46 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from connection_manager import manager
-from schemas.message import Message
+from schemas.message import Message, LoadHistory
 from schemas.upload_schema import Upload
 from core.auth_token import validate_token
 from services.friend_service import friend_request_handler
 from services.user_db_service import upsert_user
 from database import async_session
-from services.chat_service import chat_handler
+from services.chat_service import chat_handler, load_chat
+from sqlalchemy.exc import SQLAlchemyError
 
 websocket_router = APIRouter()
 
 # incoming requests are either text message, file upload or friend request
 async def request_filter(data, msg_type:str, user_id:str, user_email, websocket:WebSocket):
+    
     if msg_type == "message":
+        # pydantic validation and deserialization
+        # data comes in as a raw dict --> pydantic validates each field against type annotations -> produces typed Message instance
         message_model = Message(**data)
         message, message_to = message_model.message, message_model.to
-        await chat_handler(msg_type, message,user_id,message_to)
+        try:
+            await chat_handler(msg_type, message, user_id, message_to)
+            await manager.send_personal_message(msg_type, message_to, message, user_id)
+        except SQLAlchemyError:
+            await websocket.send_json({"type": "message_error", "message": "failed to send"})
 
     elif msg_type == "file_upload":
         # frontend sends --> {"type":"upload_file", "to":"to_id", "url":"url"}
         file_received = Upload(**data)
         file_to, file_url = file_received.to, file_received.url
-        await chat_handler(msg_type, file_url,user_id,file_to)
+        try:
+            await chat_handler(msg_type, file_url, user_id, file_to)
+            await manager.send_personal_message(msg_type, file_to, file_url, user_id)
+        except SQLAlchemyError:
+            await websocket.send_json({"type": "message_error", "message": "failed to send"})
+
+    elif msg_type == "load_history":
+        load_history = LoadHistory(**data)
+        chat_id = load_history.chat_id
+        before_message_id = load_history.before
+        await websocket.send_json(await load_chat(chat_id, before_message_id, user_id))
+
     else:
         await friend_request_handler(msg_type,data,websocket,user_id,user_email)
 

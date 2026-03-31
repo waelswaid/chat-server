@@ -23,3 +23,17 @@ async def insert_users_to_chat_members(session, user1:ChatMember, user2:ChatMemb
 async def insert_message(session, message:Message):
     session.add(message)
 
+
+async def load_messages(session, chat_id:str, before_message_id:int|None):
+    query = select(Message).where(Message.chat_id == chat_id)
+    if before_message_id is not None:
+        query = query.where(Message.message_id <= before_message_id)                 
+    query = query.order_by(Message.message_id.desc()).limit(10)
+    return (await session.execute(query)).scalars().all()
+
+
+async def is_chat_member(session, chat_id: str, user_id: str) -> bool:
+    result = (await session.execute(    
+        select(ChatMember.user_id)
+        .where(ChatMember.chat_id == chat_id, ChatMember.user_id == user_id)                                                                 )).scalars().first()
+    return result is not None 
