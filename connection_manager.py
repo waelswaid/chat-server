@@ -13,14 +13,15 @@ class ConnectionManager:
     def disconnect(self, websocket: WebSocket, user_id: str):
         del self.active_connections[user_id]
 
-
     # email is the human readable display name for the "from" field, and user_id is the internal lookup key for routing 
-    async def send_personal_message(self,msg_type:str, to: str, message: str, sender_email: str):
+    async def send_personal_message(self,msg_type:str, to: str, message: str, sender_id: str):
         # active_connections --> {user_id : {"websocket":websocket, "email" : user_email}}
-        inner = self.active_connections.get(to) # inner = {"websocket":websocket, "email":user_email}
-        if inner:
-            to_websocket = inner["websocket"] # to_websocket = websocket
-            await to_websocket.send_json({"type":msg_type, "from":sender_email, "message":message })
+        to_conn = self.active_connections.get(to)
+        sender_conn = self.active_connections.get(sender_id)
+        if not to_conn or not sender_conn:
+            return
+        sender_email = sender_conn["email"]
+        await to_conn["websocket"].send_json({"type": msg_type, "from": sender_email, "message": message})
 
     async def broadcast(self, message: dict):
         for inner in self.active_connections.values():
