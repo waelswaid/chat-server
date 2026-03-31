@@ -36,14 +36,15 @@ async def chat_handler(msg_type:str, message:str,  sender_id:str, receiver_id:st
 
 
 
-async def load_chat(chat_id: str, before_message_id:int|None, user_id:str):
+async def load_chat(dm_key: str, before_message_id:int|None, user_id:str):
     async with async_session() as session:
+        chat_id = await query_chats_for_existing_chat(session, dm_key)
+        if not chat_id:
+            return {"type": "load_history", "dm_key": dm_key, "messages": []}
         result = await is_chat_member(session, chat_id, user_id)
         if not result:
             return {"type": "message_error", "message": "unauthorized chat"}
-        messages =  await load_messages(session, chat_id, before_message_id)   
-            
-        # load_messages() returns a list of Message ORM instances, I need to convert to dicts/json b4 returning to the websocket
-        return {"type": "load_history", "messages": [
+        messages = await load_messages(session, chat_id, before_message_id)
+        return {"type": "load_history", "dm_key": dm_key, "messages": [
             {"message_id": m.message_id, "user_id": m.user_id, "message": m.message, "type": m.type, "timestamp": str(m.timestamp)}
             for m in reversed(messages)]}

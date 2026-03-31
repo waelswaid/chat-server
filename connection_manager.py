@@ -21,7 +21,7 @@ class ConnectionManager:
         if not to_conn or not sender_conn:
             return
         sender_email = sender_conn["email"]
-        await to_conn["websocket"].send_json({"type": msg_type, "from": sender_email, "message": message})
+        await to_conn["websocket"].send_json({"type": msg_type, "from": sender_email, "from_id": sender_id, "message": message})
 
     async def broadcast(self, message: dict):
         for inner in self.active_connections.values():

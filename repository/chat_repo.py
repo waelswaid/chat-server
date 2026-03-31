@@ -27,7 +27,7 @@ async def insert_message(session, message:Message):
 async def load_messages(session, chat_id:str, before_message_id:int|None):
     query = select(Message).where(Message.chat_id == chat_id)
     if before_message_id is not None:
-        query = query.where(Message.message_id <= before_message_id)                 
+        query = query.where(Message.message_id < before_message_id)                 
     query = query.order_by(Message.message_id.desc()).limit(10)
     return (await session.execute(query)).scalars().all()
 

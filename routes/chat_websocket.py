@@ -37,9 +37,9 @@ async def request_filter(data, msg_type:str, user_id:str, user_email, websocket:
 
     elif msg_type == "load_history":
         load_history = LoadHistory(**data)
-        chat_id = load_history.chat_id
+        dm_key = load_history.dm_key
         before_message_id = load_history.before
-        await websocket.send_json(await load_chat(chat_id, before_message_id, user_id))
+        await websocket.send_json(await load_chat(dm_key, before_message_id, user_id))
 
     else:
         await friend_request_handler(msg_type,data,websocket,user_id,user_email)

@@ -10,5 +10,5 @@ class Message(BaseModel):
 
 
 class LoadHistory(BaseModel):
-    chat_id: str
+    dm_key: str
     before: int | None = None
