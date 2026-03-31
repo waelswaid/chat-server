@@ -2,7 +2,6 @@ from sqlalchemy import DateTime, String, Boolean, text
 from sqlalchemy.orm import Mapped, mapped_column
 from models.base import Base
 from datetime import datetime
-import uuid
 
 
 class Chat(Base):
@@ -10,8 +9,7 @@ class Chat(Base):
 
     chat_id: Mapped[str] = mapped_column(
         String,
-        primary_key=True,
-        default=lambda: str(uuid.uuid4())
+        primary_key=True
     )
     chat_name: Mapped[str | None] = mapped_column(
         String,

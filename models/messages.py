@@ -25,7 +25,7 @@ class Message(Base):
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False
     )
-    msg: Mapped[str] = mapped_column(
+    message: Mapped[str] = mapped_column(
         String,
         nullable=False
     )

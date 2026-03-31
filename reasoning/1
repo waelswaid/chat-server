@@ -1,0 +1,119 @@
+                                    # 1-on-1 chat creation with dm_key
+
+
+# **phase 1 plan**:
+"""
+user A sends a message to user B --> chat is created
+
+what do I have currently? 
+user A sends a message to user B using the send_personal_message method, the method gets user B websocket from active_connections pool,
+that means if user B is offline user A can't send him a message.
+
+how can that be fixed?
+when a user connects he gets assigned a unique websocket instance, that websocket changes with reconnect, but what doesn't change is user credentials, 
+so if user A sends user B a message while he's offline I can store that message, wait until he reconnects, fetch his current websocket and send him
+that message
+
+where and how should the message be stored?
+maybe message brokers? ofc not what if the user doesn't connect back for a while, the message will be lost.
+how about a database table? how would that work? what are the tradeoffs of that approach?
+
+I can create a new table, something like: ## recepient_id, sender_id, message, timestamp ##
+if userA --> message --> userB AND userB offline:
+    insert(userB_id, userA_id, message, timestamp)
+then:
+user connets --> query offline messages --> offline messages found --> user.websocket.send()
+
+that works, but is there a better way? 
+maybe I can use messages table I can add an is_recevied boolean column I would also need to add recepient_id,
+hmm maybe the answer isn't databases, how can I store a message long term without losing it? ok nevermind the answer is defenitely database,
+the question that remains: should I add a new table or use an existing one?
+let's compare the tradeoffs, keep in mind that the best solution is optimal in terms of reading and querying,
+if I create a new table that could make the database messy, I would also need to ensure that message_id remains sequential across both tables,
+I don't know adding a new table feels redundant, let's look at the other option, 
+adding new columns to messages can mess up that table, and everytime a user connects I would need to query the table, hold on a minute maybe the
+answer is another junction table messages has a composite index(chat_id, message_id), so if i create a new table with these columns:
+user_id, chat_id, message_id I query the table when a user connects if his id is found I query messages using the index and kaboom I have all the 
+messaged he missed in an ascending order. I think that has to be the correct answer, I will consider it as so for now and continue with the rest
+of the logic so to summarize:
+
+###################################
+new table(offline_messages)
+user_id(pk), chat_id, message_id
+###################################
+if userA --> message --> userB AND userB online:
+    have_chat = query_chats_table_for_existing_chat()
+    if not have_chat:
+        generate_dm_key()
+        insert_new_row_to_chats_table()
+        insert_both_users_to_chats_members()
+        insert_message_to_messages()
+        send_personal_message()
+    else:
+        insert_message_to_messages()
+        send_personal_message()
+
+if userA --> message --> userB AND userB offline:
+
+if userB is offline I don't have to check if they have a chat or not, because when he reconnects and the message is sent, that logic would be
+triggered anyways, but what if he disconnects in the middle of the transaction? well I guess he wouldn't be getting his messages because
+why the fuck would you connect for 0.1 milliseconds and disconnect.
+hold on a second I missed something, what about keeping message_id sequential, how do I do that with two tables? I would need to keep track
+of message_id outside the database which is a fucking pain in the ass, umm actually not really it isn't, it's a cheap:
+select message_id from messages DESC limit=1, all I have to do is remove the auto increment from ORM model, and so my final logic would be:
+
+###################################
+new table(offline_messages)
+user_id(pk), chat_id, message_id
+###################################
+if userA --> message --> userB AND userB online:
+    have_chat = query_chats_table_for_existing_chat()
+    if not have_chat:
+        generate_dm_key()
+        insert_new_row_to_chats_table()
+        insert_both_users_to_chats_members()
+        insert_message_to_messages()
+        send_personal_message()
+    else:
+        insert_message_to_messages()
+        send_personal_message()
+
+if userA --> message --> userB AND userB offline:
+    insert_message_to_offline_messages()
+
+and when a user connects: query_offline_messages() if user found: send messages
+
+oh fuck me, I overcomplicated the shit out of this problem, my so called "solution" actually creates more problems, it's simple when a user
+connects and joins a chat his messages are going to be loaded whether he had offline messages or not, I don't need a new table, all messages
+are inserted into messages table even if he's offline and then when he connects missed messages are loaded and the user recevies them, so the 
+logic is actually:
+
+if userA --> message --> userB:
+    have_chat = query_chats_table_for_existing_chat() V
+    if not have_chat:
+        generate_dm_key() V
+        insert_new_chat_to_chats()
+        insert_both_users_to_chats_members()
+        insert_message_to_messages()
+        send_personal_message()
+    else:
+        insert_message_to_messages()
+        send_personal_message()
+
+when a user connects to chat:
+query_messages(chat_id) <--- returns last 20 messages in chat_id ---> frontend displays them
+
+ok now implementation, I need to build the tools first:
+                    repo/ 
+async def query_chats_table_for_existing_chat() -> boolean
+async def insert_new_chat_to_chats()
+async def insert_both_users_to_chat_members()
+insert_message_to_messages()
+
+                    core/
+def generate_dm_key() -> str 
+
+                    services/
+async def load_chat_messages()
+async def send_message()
+"""

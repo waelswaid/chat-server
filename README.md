@@ -41,15 +41,15 @@ Runs as a Docker container on AWS alongside portfolio/ and auth-system/
 ### chats and messaging history
  - tables:
    - messages: message_id (bigint, sequential), chat_id(uuid), user_id(str), msg(str), type(str), timestamp(datetime)
-                Primary_Key(message_id)
-                Foreign_Key(chat_id) references chats.chat_id
-                Foreign_Key(user_id) references users.user_id
-                index(chat_id, message_id)
+        - Primary_Key(message_id)
+        - Foreign_Key(chat_id) references chats.chat_id
+        - Foreign_Key(user_id) references users.user_id
+        - index(chat_id, message_id)
 
-   - chats_members: chat_id(uuid), user_id(str), is_admin(boolean), joined_at(datetime)
-            Primary_Key(chat_id, user_id)
-            Foreign_Key(chat_id) references chats.chat_id
-            Foreign_key(user_id) references users.user_id
+   - chats_members: chat_id(uuid), user_id(str, sender), is_admin(boolean), joined_at(datetime)
+        - Primary_Key(chat_id, user_id)
+        - Foreign_Key(chat_id) references chats.chat_id
+        - Foreign_key(user_id) references users.user_id
     
     - chats: chat_id (PK), chat_name(str, nullable), created_at(datetime), is_group(boolean), dm_key(str,unique,nullable)
 
@@ -58,3 +58,11 @@ Runs as a Docker container on AWS alongside portfolio/ and auth-system/
 - notes to self:
     query chats by index(chat_id, message_id) for loading chat history
     query chats by dm_key for direct chats
+
+**implementation order**: 
+
+1. 1-on-1 chat creation with dm_key
+2. messages persistance
+3. introduce group chats creation feature
+4. group chat creation + member managment
+
