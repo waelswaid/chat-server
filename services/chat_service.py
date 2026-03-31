@@ -1,4 +1,7 @@
+import logging
 from database import async_session
+
+logger = logging.getLogger(__name__)
 from repository.chat_repo import (
     query_chats_for_existing_chat, insert_message, insert_new_chat, insert_users_to_chat_members,
     load_messages, is_chat_member)
@@ -30,7 +33,8 @@ async def chat_handler(msg_type:str, message:str,  sender_id:str, receiver_id:st
             message_orm = Message(chat_id=chat_id, user_id = sender_id, message = message, type=msg_type)
             await insert_message(session, message_orm)
             await session.commit()
-        except SQLAlchemyError:
+        except SQLAlchemyError as e:
+            logger.error(f"chat_handler failed: {e}")
             await session.rollback()
             raise
 
