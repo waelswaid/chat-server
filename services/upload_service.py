@@ -1,4 +1,5 @@
 from fastapi import UploadFile, HTTPException
+import asyncio
 import uuid
 import boto3
 from core.config import settings
@@ -27,7 +28,9 @@ async def upload_file(sender_id: str, file: UploadFile, contents: bytes):
     ext = file.filename.split(".")[-1]
     filename = f"{uuid.uuid4()}.{ext}"
 
-    s3.put_object(
+    # boto3 is synchronous — run in thread pool to avoid blocking the event loop
+    await asyncio.to_thread(
+        s3.put_object,
         Bucket=settings.S3_BUCKET_NAME,
         Key=filename,
         Body=contents,

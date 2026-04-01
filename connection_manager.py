@@ -1,5 +1,8 @@
 import asyncio
+import logging
 from fastapi import WebSocket
+
+logger = logging.getLogger(__name__)
 
 GRACE_PERIOD_SECONDS = 300  # 5 minutes
 
@@ -95,13 +98,19 @@ class ConnectionManager:
         # email is the human readable display name for the "from" field,
         # and user_id is the internal lookup key for routing
         sender_email = sender_conn["email"]
-        await to_conn["websocket"].send_json({"type": msg_type, "from": sender_email, "from_id": sender_id, "message": message})
+        try:
+            await to_conn["websocket"].send_json({"type": msg_type, "from": sender_email, "from_id": sender_id, "message": message})
+        except Exception:
+            logger.warning("send_personal_message failed for user %s", to)
 
     async def broadcast(self, message: dict):
         for inner in self.active_connections.values():
             # skip users in grace period (no active websocket)
             if inner["websocket"] is not None:
-                await inner["websocket"].send_json(message)
+                try:
+                    await inner["websocket"].send_json(message)
+                except Exception:
+                    logger.warning("broadcast send failed for a connection")
 
     def get_connection(self, user_id: str) -> WebSocket | None:
         inner = self.active_connections.get(user_id)

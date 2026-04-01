@@ -27,7 +27,10 @@ async def send_friend_request(req : FriendRequest, websocket:WebSocket, user_id:
     # notify receiver if online
     receiver_ws = manager.get_connection(req.to)
     if receiver_ws:
-        await receiver_ws.send_json({"type": "friend_request_received", "from_user": user_id, "email": user_email})
+        try:
+            await receiver_ws.send_json({"type": "friend_request_received", "from_user": user_id, "email": user_email})
+        except Exception:
+            pass
     return
     
 
@@ -45,7 +48,10 @@ async def friend_request_accept(req : FriendAccept, websocket:WebSocket, accepte
     # notify original requester if online
     requester_ws = manager.get_connection(requester_id)
     if requester_ws:
-        await requester_ws.send_json({"type": "friend_request_accepted", "user_id": accepter_id, "email": accepter_email})
+        try:
+            await requester_ws.send_json({"type": "friend_request_accepted", "user_id": accepter_id, "email": accepter_email})
+        except Exception:
+            pass
     return
     
 
@@ -62,7 +68,10 @@ async def friend_request_declined(req : FriendDecline, websocket:WebSocket, decl
     # notify original requester if online
     requester_ws = manager.get_connection(requester_id)
     if requester_ws:
-        await requester_ws.send_json({"type": "friend_request_declined", "user_id": decliner_id})
+        try:
+            await requester_ws.send_json({"type": "friend_request_declined", "user_id": decliner_id})
+        except Exception:
+            pass
     return
         
 async def friend_remove(req: FriendRemove, websocket : WebSocket, remover_id: str):
@@ -78,7 +87,10 @@ async def friend_remove(req: FriendRemove, websocket : WebSocket, remover_id: st
     # notify removed friend if online
     removed_ws = manager.get_connection(removed_id)
     if removed_ws:
-        await removed_ws.send_json({"type": "friend_removed", "user_id": remover_id})
+        try:
+            await removed_ws.send_json({"type": "friend_removed", "user_id": remover_id})
+        except Exception:
+            pass
     return
         
 
