@@ -63,14 +63,16 @@ async def auth_conn_user(websocket: WebSocket) -> tuple[str, str] | None:
     # upsert user to database
     async with async_session() as session:
         await upsert_user(session, user_id, user_email)
-    # connect user
-    await manager.connect(websocket, user_id, user_email)
+    # connect user — returns True if reconnecting during grace period
+    reconnected = await manager.connect(websocket, user_id, user_email)
     # send online users list to user
     await websocket.send_json({
         "type": "user_list",
         "users": manager.get_online_users()
     })
-    await manager.broadcast({"type": "user_joined", "user_id": user_id, "email": user_email})
+    # only broadcast join if this is a fresh connection, not a grace period reconnect
+    if not reconnected:
+        await manager.broadcast({"type": "user_joined", "user_id": user_id, "email": user_email})
 
     return user_id, user_email
 
@@ -94,5 +96,5 @@ async def route_to_server(websocket: WebSocket):
             msg_type = data.get("type")
             await request_filter(data, msg_type, user_id, user_email, websocket)
     except WebSocketDisconnect:
-        manager.disconnect(websocket, user_id)
-        await manager.broadcast({"type": "user_left", "user_id": user_id, "email": user_email})
+        # starts grace period — user_left broadcast happens if timer expires
+        await manager.disconnect(user_id, websocket)

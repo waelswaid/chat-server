@@ -3,6 +3,7 @@ from routes.chat_websocket import websocket_router
 from routes.upload_route import upload_router
 from contextlib import asynccontextmanager
 from database import engine
+from connection_manager import manager
 
 
 
@@ -10,6 +11,8 @@ from database import engine
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     yield
+    # cancel all grace period timers before shutting down
+    manager.cancel_all_pending()
     await engine.dispose()
 
 
